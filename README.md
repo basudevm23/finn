@@ -45,7 +45,9 @@ Cost principles:
 **Grounding rule (pull side):** prompts restrict the model to the transcripts and reported numbers. No news, no broker notes, no model memory. Every verdict cites numbers, every call links its transcript, and quotes are shown verbatim.
 
 ## Files
-- `app/page.js`: feed (push)
-- `app/r/[ticker]/page.js`: research (pull)
+- `app/page.js`: **Alerts** tab (push): price alerts, Important, FYI, Routine; read/unread kept for the session
+- `app/research/page.js`: **Research** tab (pull): search by company name or ticker, recent research this session
+- `app/research/[ticker]/page.js`: research report
+- `app/api/resolve`: name → ticker (screener search first; AI fallback for brands/old names like "Zomato" → ETERNAL, verified against screener)
 - `app/api/*`: feed, prices, enrich, research, usage
 - `lib/`: data sources, classifier, Gemini client, cache, portfolio

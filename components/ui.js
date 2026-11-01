@@ -85,3 +85,21 @@ export function Loader({ steps }) {
     </div>
   );
 }
+
+// Session memory: read/unread state and recent research live for this browser session.
+export function useSession(key, init) {
+  const [v, setV] = useState(init);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    try { const s = sessionStorage.getItem(key); if (s) setV(JSON.parse(s)); } catch {}
+    setReady(true);
+  }, [key]);
+  const set = (nv) => {
+    setV((old) => {
+      const val = typeof nv === 'function' ? nv(old) : nv;
+      try { sessionStorage.setItem(key, JSON.stringify(val)); } catch {}
+      return val;
+    });
+  };
+  return [v, set, ready];
+}

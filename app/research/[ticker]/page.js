@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import AskBar from '@/components/AskBar';
-import { pc, tone, Spark, NumTable, Loader } from '@/components/ui';
+import { pc, tone, Spark, NumTable, Loader, useSession } from '@/components/ui';
 
 const ORDER = ['delivered', 'partly', 'missed', 'too_early', 'unverifiable'];
 const LABEL = { delivered: 'Delivered', partly: 'Partly', missed: 'Missed', too_early: 'Too early', unverifiable: 'Unverifiable' };
@@ -13,22 +12,42 @@ export default function Research() {
   const router = useRouter();
   const [num, setNum] = useState(null);
   const [pvd, setPvd] = useState(null);
+  const [, setRecent] = useSession('finn.recent', []);
 
   useEffect(() => {
     setNum(null); setPvd(null);
-    fetch(`/api/research/${sym}?part=numbers`).then((r) => r.json()).then((d) => {
-      setNum(d);
-      if (!d.error) fetch(`/api/research/${sym}?part=guidance`).then((r) => r.json()).then(setPvd).catch((e) => setPvd({ error: e.message }));
+    // Session memory: a report opened earlier this session shows instantly, no refetch.
+    let hit;
+    try { hit = JSON.parse(sessionStorage.getItem(`finn.r.${sym}`) || 'null'); } catch {}
+    if (hit?.num) { setNum(hit.num); if (hit.pvd) return setPvd(hit.pvd); }
+    const save = (k, v) => { try { const o = JSON.parse(sessionStorage.getItem(`finn.r.${sym}`) || '{}'); o[k] = v; sessionStorage.setItem(`finn.r.${sym}`, JSON.stringify(o)); } catch {} };
+    const guidance = () =>
+      fetch(`/api/research/${sym}?part=guidance`).then((r) => r.json())
+        .then((g) => { setPvd(g); if (!g.error) save('pvd', g); })
+        .catch((e) => setPvd({ error: e.message }));
+    if (hit?.num) return void guidance();
+    fetch(`/api/research/${sym}?part=numbers`).then((r) => r.json()).then(async (d) => {
+      if (d.error) {
+        // Not a ticker we know (e.g. ZOMATO): let the resolver work out the company and redirect.
+        const res = await fetch(`/api/resolve?ai=1&q=${encodeURIComponent(sym)}`).then((r) => r.json()).catch(() => ({}));
+        const to = res.results?.[0]?.sym;
+        if (to && to.toUpperCase() !== sym) return router.replace(`/research/${to}`);
+        return setNum(d);
+      }
+      setNum(d); save('num', d);
+      setRecent((r) => [{ sym, name: d.name }, ...r.filter((x) => x.sym !== sym)].slice(0, 8));
+      guidance();
     }).catch((e) => setNum({ error: e.message }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sym]);
 
   const maxRev = Math.max(...(num?.trend || []).map((t) => t.rev || 0), 1);
 
   return (
     <>
-      <header className="r-head">
-        <button className="icon-btn" onClick={() => (history.length > 1 ? router.back() : router.push('/'))} aria-label="Back">←</button>
-        <h1>{sym}</h1>
+      <header className="top r-head">
+        <button className="icon-btn" onClick={() => router.push('/research')} aria-label="Back to research">← Research</button>
+        <h1 style={{ marginTop: 12 }}>{sym}</h1>
         {num?.name && <div className="nm">{num.name}</div>}
         {num?.price && (
           <div className="px">
@@ -40,7 +59,7 @@ export default function Research() {
       </header>
 
       {!num ? <div className="sec"><Loader steps={['Loading reported numbers…']} /></div>
-        : num.error ? <div className="sec"><div className="empty"><b>Couldn't load {sym}</b>{num.error}. Check the NSE symbol (e.g. DMART is listed as AVENUEMRT on some sources).</div></div>
+        : num.error ? <div className="sec"><div className="empty"><b>Couldn't load {sym}</b>{/404/.test(num.error) ? `Couldn't match "${sym}" to a listed company. Try searching by company name on the Research tab.` : `${num.error}. The data source may be unreachable right now.`}</div></div>
         : (
           <>
             <section className="sec">
@@ -85,7 +104,6 @@ export default function Research() {
             </p>
           </>
         )}
-      <AskBar hint="Another ticker…" />
     </>
   );
 }
