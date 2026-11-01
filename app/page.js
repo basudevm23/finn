@@ -38,10 +38,11 @@ export default function Feed() {
     [px, cfg, doneSet]
   );
 
-  const items = (feed?.items || []).map((i) => ({ ...i, alert: cfg.cats.includes(i.category) && i.tier <= 2 }));
+  // A category you watch flags its material filings; it never promotes routine ones.
+  const items = (feed?.items || []).map((i) => ({ ...i, watched: cfg.cats.includes(i.category), alert: cfg.cats.includes(i.category) && i.tier === 1 }));
   const live = items.filter((i) => !doneSet.has(i.id));
-  const material = live.filter((i) => i.tier === 1 || i.alert).sort((a, b) => b.alert - a.alert || a.tier - b.tier);
-  const notable = live.filter((i) => i.tier === 2 && !i.alert);
+  const material = group(live.filter((i) => i.tier === 1).sort((a, b) => b.alert - a.alert || b.ts - a.ts));
+  const notable = group(live.filter((i) => i.tier === 2));
   const routine = items.filter((i) => i.tier === 3);
   const cleared = items.filter((i) => i.tier < 3 && doneSet.has(i.id)).length;
   const need = material.length + moves.length;
@@ -119,18 +120,21 @@ export default function Feed() {
           <section className="sec">
             <div className="sec-h"><span>Material</span><span>{material.length}</span></div>
             {material.length === 0 && <div className="empty"><b>Clear.</b>No material filings in this window.</div>}
-            {material.map((i) => <Material key={i.id} i={i} onClear={() => clear(i.id)} />)}
+            {material.map((i) => <Material key={i.id} i={i} onClear={() => [i, ...i.rest].forEach((x) => clear(x.id))} />)}
           </section>
 
           {notable.length > 0 && (
             <section className="sec">
               <div className="sec-h"><span>Worth a glance</span><span>{notable.length}</span></div>
               {notable.map((i) => (
-                <Swipe key={i.id} className="line-row" onClear={() => clear(i.id)}>
+                <Swipe key={i.id} className="line-row" onClear={() => [i, ...i.rest].forEach((x) => clear(x.id))}>
                   <Link href={`/r/${i.ticker}`} className="t">{i.ticker}</Link>
                   <a className="txt" href={i.pdf || undefined} target="_blank" rel="noreferrer">
-                    {i.line || i.subject || i.headline}
-                    <small>{CATEGORY_LABEL[i.category]} · {ago(i.ts)}</small>
+                    {i.line || i.title}
+                    <small>
+                      <span style={i.watched ? { color: 'var(--accent)' } : undefined}>{CATEGORY_LABEL[i.category]}</span> · {ago(i.ts)}
+                      {i.rest.length > 0 && ` · +${i.rest.length} similar`}
+                    </small>
                   </a>
                 </Swipe>
               ))}
@@ -146,7 +150,7 @@ export default function Feed() {
                 routine.map((i) => (
                   <div key={i.id} className="line-row dim">
                     <span className="t">{i.ticker}</span>
-                    <a className="txt" href={i.pdf || undefined} target="_blank" rel="noreferrer">{i.subject || i.headline}<small>{ago(i.ts)}</small></a>
+                    <a className="txt" href={i.pdf || undefined} target="_blank" rel="noreferrer">{i.title}<small>{ago(i.ts)}</small></a>
                   </div>
                 ))}
             </section>
@@ -168,9 +172,9 @@ export default function Feed() {
 
 // A price move is more useful next to its likely cause.
 function Related({ ticker, items }) {
-  const f = items.find((i) => i.ticker === ticker && i.tier <= 2);
+  const f = items.find((i) => i.ticker === ticker && i.tier === 1) || items.find((i) => i.ticker === ticker && i.tier === 2);
   if (!f) return null;
-  return <p className="note" style={{ marginTop: 8 }}>Same window: {CATEGORY_LABEL[f.category]} — {f.line || f.subject}</p>;
+  return <p className="note" style={{ marginTop: 8 }}>Same window: {CATEGORY_LABEL[f.category]} — {f.line || f.title}</p>;
 }
 
 function Swipe({ className, onClear, children }) {
@@ -194,8 +198,12 @@ function Material({ i, onClear }) {
   const [x, setX] = useState(null);
   useEffect(() => {
     if (!seen || x || !(i.kind === 'results' || i.kind === 'bio') || i.sample) return;
-    const q = new URLSearchParams({ id: i.id, kind: i.kind, pdf: i.pdf || '', h: i.headline, co: i.name || i.ticker });
-    fetch(`/api/enrich?${q}`).then((r) => r.json()).then(setX).catch((e) => setX({ error: e.message }));
+    const q = new URLSearchParams({ id: i.id, kind: i.kind, pdf: i.pdf || '', h: i.headline, co: i.name || i.ticker, t: i.ticker });
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 90e3);
+    fetch(`/api/enrich?${q}`, { signal: ctl.signal }).then((r) => r.json()).then(setX)
+      .catch(() => setX({ error: 'Taking too long (free-tier queue). Pull down to retry.' }))
+      .finally(() => clearTimeout(timer));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seen, i.id]);
 
@@ -207,7 +215,17 @@ function Material({ i, onClear }) {
           <span className={`tag ${i.alert ? 'hot' : ''}`}>{CATEGORY_LABEL[i.category]}</span>
           <span className="when">{ago(i.ts)}</span>
         </div>
-        <p className="hl">{i.line || i.subject || i.headline}</p>
+        <p className="hl">{i.line || i.title}</p>
+        {i.rest.length > 0 && (
+          <details className="note" style={{ marginTop: 6 }}>
+            <summary style={{ cursor: 'pointer' }}>+{i.rest.length} earlier {CATEGORY_LABEL[i.category].toLowerCase()} updates from {i.ticker}</summary>
+            {i.rest.map((r) => (
+              <a key={r.id} href={r.pdf || undefined} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: 4 }}>
+                {ago(r.ts)} · {r.line || r.title}
+              </a>
+            ))}
+          </details>
+        )}
         {(i.kind === 'results' || i.kind === 'bio') && (
           <div className="enrich">
             {i.sample ? <p className="err">Sample item; connect live sources for the {i.kind === 'results' ? 'headline numbers' : 'background check'}.</p>
@@ -278,4 +296,16 @@ function Settings({ cfg, setCfg, close }) {
       </div>
     </>
   );
+}
+
+// One card per company+topic thread: 8 NCLAT updates from the same case become one card
+// with "+7 earlier". Items arrive newest-first, so the head is the latest.
+function group(list) {
+  const map = new Map();
+  for (const i of list) {
+    const k = `${i.ticker}|${i.category}`;
+    if (map.has(k)) map.get(k).rest.push(i);
+    else map.set(k, { ...i, rest: [] });
+  }
+  return [...map.values()];
 }

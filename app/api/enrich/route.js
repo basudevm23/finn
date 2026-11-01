@@ -1,5 +1,6 @@
 import { cached, DAY } from '@/lib/cache';
 import { gemini, hasKey, pdfPart, fetchPdf } from '@/lib/gemini';
+import { screener, headline } from '@/lib/screener';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -8,12 +9,12 @@ export const maxDuration = 60;
 // view, so tokens are spent on what the investor actually looks at — once per filing.
 export async function GET(req) {
   const p = new URL(req.url).searchParams;
-  const id = p.get('id'), kind = p.get('kind'), pdf = p.get('pdf'), head = (p.get('h') || '').slice(0, 500), co = p.get('co') || '';
+  const id = p.get('id'), kind = p.get('kind'), pdf = p.get('pdf'), head = (p.get('h') || '').slice(0, 500), co = p.get('co') || '', t = p.get('t') || '';
   if (!hasKey()) return Response.json({ error: 'Add GEMINI_API_KEY to enable enrichment' }, { status: 200 });
   if (!pdf) return Response.json({ error: 'No filing attached' });
   try {
     const data = await cached(`enrich:${kind}:${id}`, 30 * DAY, () =>
-      kind === 'results' ? results(pdf) : kind === 'bio' ? bio(pdf, head, co) : Promise.reject(new Error('bad kind'))
+      kind === 'results' ? results(pdf).catch((e) => fromReported(t, e)) : kind === 'bio' ? bio(pdf, head, co) : Promise.reject(new Error('bad kind'))
     );
     return Response.json(data);
   } catch (e) {
@@ -58,6 +59,18 @@ async function results(pdf) {
       row('PAT', (c) => col('pat', c)),
     ],
     note: 'EBITDA = PBT + finance costs + depreciation − other income, computed from the filing.',
+  };
+}
+
+// Fallback when the filing can't be read (e.g. a 30 MB PDF): the same four lines from the
+// standardised quarterly table, computed in code. Labelled so the investor knows the source.
+async function fromReported(t, err) {
+  if (!t) throw err;
+  const s = await cached(`scr:${t}`, 6 * 3600e3, () => screener(t));
+  const h = headline(s.quarters);
+  return {
+    type: 'results', period: h.period, basis: 'reported financials', rows: h.rows,
+    note: `Filing PDF unreadable (${err.message}); numbers from the reported quarterly table. EBITDA = operating profit.`,
   };
 }
 

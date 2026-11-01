@@ -43,8 +43,14 @@ export async function GET(req) {
 async function addOneLiners(items) {
   const want = items.filter((i) => i.tier === 2 || i.kind === 'oneliner');
   want.forEach((i) => (i.line = peek(`line:${i.id}`)));
-  const todo = want.filter((i) => !i.line).slice(0, 40);
+  const todo = want.filter((i) => !i.line).slice(0, 120);
   if (!todo.length || !hasKey()) return;
+  const chunks = [];
+  for (let k = 0; k < todo.length; k += 40) chunks.push(todo.slice(k, k + 40));
+  await Promise.all(chunks.map(oneBatch));
+}
+
+async function oneBatch(todo) {
   try {
     const out = await gemini({
       tier: 'cheap',
