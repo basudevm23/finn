@@ -4,9 +4,9 @@ Hi ENAM team,
 
 Please find my submission for the FINN build challenge.
 
-- Prototype (open on a phone): <VERCEL_URL>
-- Repository: <GITHUB_URL>
-- AI build history: <CLAUDE_SHARE_LINK>
+- Prototype (open on a phone): https://finn-tau-pink.vercel.app/
+- Repository: https://github.com/basudevm23/finn
+- AI build history:  https://github.com/basudevm23/finn/blob/main/BUILD_LOG.md
 
 **What I built.** FINN is a mobile-first PWA with a Push / Pull switch at the top, mirroring the brief.
 
