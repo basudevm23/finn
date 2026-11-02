@@ -1,4 +1,5 @@
 import './globals.css';
+import DataNote from '@/components/DataNote';
 
 export const metadata = {
   title: 'FINN',
@@ -22,7 +23,7 @@ export default function Root({ children }) {
         />
       </head>
       <body>
-        <main className="shell">{children}</main>
+        <main className="shell">{children}<DataNote /></main>
         <script
           dangerouslySetInnerHTML={{
             __html: "if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}))",

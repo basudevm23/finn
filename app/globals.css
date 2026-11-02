@@ -438,3 +438,8 @@ body { background: var(--bg); }
 .theme-btn { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--dim); display: grid; place-items: center; }
 .modebar-r { gap: 6px; }
 input[type=range] { accent-color: var(--accent); }
+
+/* small-print data attribution */
+.datanote { margin-top: 36px; padding: 14px 0 6px; border-top: 1px solid var(--line); font-size: 10px; line-height: 1.6; color: var(--faint); }
+.datanote p + p { margin-top: 4px; }
+.datanote b { font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; font-size: 9.5px; }
