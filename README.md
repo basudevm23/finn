@@ -2,6 +2,8 @@
 
 A mobile-first investment agent for Indian equities, built around the brief's two modes. A **Push / Pull** toggle sits at the top of every screen.
 
+Link: https://finn-tau-pink.vercel.app/ 
+
 ## Push: the app reaches out to you
 - **Digest** (a windowed digest; choose 24H, 3D, 7D or 30D). Every filing across the 18-stock portfolio, prioritised:
   - **Important**: material filings shown as Medium-style stories, each with a headline, a 20–30-word summary, read time and an animated cover. Tapping one opens a reader. A results story shows Revenue / EBITDA / PBT / PAT with QoQ and YoY; a CEO/CFO change shows a sourced background of the incoming person.
