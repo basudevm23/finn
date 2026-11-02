@@ -149,3 +149,117 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 details summary { list-style: none; cursor: pointer; } details summary::-webkit-details-marker { display: none; }
 .quote { font-size: 12.5px; color: var(--dim); border-left: 2px solid var(--line2); padding-left: 10px; margin: 6px 0; }
 .foot { margin-top: 24px; font: 10.5px var(--mono); color: var(--faint); line-height: 1.7; }
+
+/* ===== tabs ===== */
+:root { --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif; }
+.chip.sm { padding: 4px 10px; font-size: 11.5px; }
+.seg { display: flex; gap: 4px; margin-top: 12px; padding: 4px; background: var(--tint); border: 1px solid var(--line); border-radius: 12px; }
+.seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 2px; border-radius: 9px; font: 600 12.5px Inter, sans-serif; color: var(--dim); transition: background .2s, color .2s, box-shadow .2s; }
+.seg button.on { background: var(--bg); color: var(--text); box-shadow: 0 1px 3px rgba(150,60,90,.15); }
+.cnt { font: 600 10px/16px var(--mono); min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--line); color: var(--dim); }
+.cnt.new { background: var(--accent); color: #fff; }
+.pane { padding-top: 6px; animation: fade .25s ease-out; }
+.digest { margin: 14px 0 12px; font-size: 13px; color: var(--dim); }
+.digest b { color: var(--accent); font-size: 15px; }
+.banner { margin-top: 12px; }
+.empty { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 48px 0 24px; }
+.empty b { margin-top: 8px; }
+
+/* ===== Medium-style stories ===== */
+.hero { margin-bottom: 18px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: var(--bg); box-shadow: var(--shadow); cursor: pointer; }
+.hero-body { padding: 14px 16px 16px; }
+.story { display: flex; gap: 14px; align-items: flex-start; padding: 16px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.story-main { flex: 1; min-width: 0; }
+.byline { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); white-space: nowrap; overflow: hidden; }
+.byline .who { font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+.byline .in { color: var(--faint); }
+.avatar { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font: 700 8.5px var(--mono); color: #fff; background: var(--accent); }
+.avatar.m-good { background: var(--up); } .avatar.m-bad { background: var(--down); }
+.kicker { font-weight: 600; color: var(--dim); }
+.kicker.hot { color: var(--accent-ink); }
+.s-title { font: 700 21px/1.25 var(--serif); letter-spacing: -.01em; margin-top: 8px; color: var(--text); }
+.s-title.sm { font-size: 17px; }
+.s-dek { font: 400 15px/1.5 var(--serif); color: #4a4246; margin-top: 6px; }
+.s-dek.sm { font-size: 14px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.smeta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; font-size: 12px; color: var(--faint); }
+.mood { font: 600 10.5px var(--mono); padding: 2px 6px; border-radius: 5px; }
+.mood.good { color: var(--up); background: var(--up-bg); }
+.mood.bad { color: var(--down); background: var(--down-bg); }
+.dot.inline { position: static; display: inline-block; vertical-align: middle; margin: -3px 8px 0 0; width: 8px; height: 8px; }
+.story.read .s-title, .hero.read .s-title { color: var(--dim); font-weight: 600; }
+.story.read .s-dek, .hero.read .s-dek { color: var(--faint); }
+.story.read .art { opacity: .6; filter: saturate(.6); }
+
+/* covers */
+.art { flex: none; overflow: hidden; }
+.art svg { display: block; width: 100%; height: 100%; }
+.art-thumb { width: 96px; height: 96px; border-radius: 10px; margin-top: 26px; }
+.art-hero { width: 100%; aspect-ratio: 16 / 8; }
+
+/* price grid */
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.tile { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 10px; background: var(--tint); border: 1px solid var(--line); font-size: 11.5px; }
+.tile b { font: 600 11px var(--mono); overflow: hidden; text-overflow: ellipsis; }
+
+/* reader */
+.reader { position: fixed; inset: 0; z-index: 30; background: var(--bg); overflow-y: auto; animation: slideup .32s cubic-bezier(.2,.8,.2,1); }
+.reader-in { max-width: 480px; margin: 0 auto; padding-bottom: calc(env(safe-area-inset-bottom) + 40px); }
+.reader-bar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: calc(env(safe-area-inset-top) + 10px) 16px 10px; background: rgba(255,255,255,.94); backdrop-filter: blur(8px); }
+.article { padding: 18px 20px 0; }
+.a-title { font: 700 27px/1.2 var(--serif); letter-spacing: -.015em; margin-top: 12px; }
+.a-body { font: 400 19px/1.6 var(--serif); color: #2e282b; margin-top: 18px; }
+.a-body::first-letter { float: left; font: 700 52px/0.9 var(--serif); margin: 6px 8px 0 0; color: var(--accent); }
+.a-body.muted { color: var(--dim); }
+.a-box { margin-top: 26px; padding: 14px; border-radius: 14px; background: var(--tint); border: 1px solid var(--line); }
+.thread { display: block; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.thread:first-of-type { border-top: 0; }
+.thread span { display: block; font: 10.5px var(--mono); color: var(--faint); }
+.a-actions { display: flex; gap: 10px; margin-top: 26px; }
+.btn { flex: 1; text-align: center; padding: 12px; border-radius: 12px; background: var(--accent); color: #fff; font: 600 13px Inter, sans-serif; }
+.btn.ghost { background: var(--bg); color: var(--accent-ink); border: 1px solid var(--line2); }
+
+/* ===== motion ===== */
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes rise { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
+@keyframes slideup { from { transform: translateY(40px); opacity: 0 } to { transform: none; opacity: 1 } }
+.rise { animation: rise .45s cubic-bezier(.2,.8,.2,1) both; }
+.spark polyline { stroke-dasharray: 400; stroke-dashoffset: 400; animation: draw 1.2s ease-out .2s forwards; }
+@keyframes draw { to { stroke-dashoffset: 0 } }
+.a-draw { stroke-dasharray: 200; stroke-dashoffset: 200; animation: draw 1.4s ease-out .5s forwards; }
+.a-grow { transform-box: fill-box; transform-origin: bottom; animation: grow .8s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes grow { from { transform: scaleY(0) } }
+.a-grow-x { transform-box: fill-box; transform-origin: left; animation: growx .7s ease-out both; }
+@keyframes growx { from { transform: scaleX(0) } }
+.a-pop { transform-box: fill-box; transform-origin: center; animation: pop .5s ease-out 1.2s both; }
+@keyframes pop { from { transform: scale(0); opacity: 0 } 70% { transform: scale(1.3) } }
+.a-float { animation: float 4s ease-in-out infinite; }
+.a-float2 { animation: float 5s ease-in-out infinite reverse; }
+@keyframes float { 50% { transform: translateY(-5px) } }
+.a-eq { transform-box: fill-box; transform-origin: center; animation: eq 1s ease-in-out infinite alternate; }
+@keyframes eq { from { transform: scaleY(.25) } to { transform: scaleY(1) } }
+.a-left { animation: left 2.4s ease-in-out infinite alternate; }
+.a-right { animation: right 2.4s ease-in-out infinite alternate; }
+@keyframes left { from { transform: translateX(-10px) } to { transform: translateX(2px) } }
+@keyframes right { from { transform: translateX(10px) } to { transform: translateX(-2px) } }
+.a-slidein { animation: slidein .9s cubic-bezier(.2,.8,.2,1) .2s both; }
+@keyframes slidein { from { transform: translateX(30px); opacity: 0 } }
+.a-drop { animation: drop 2.6s cubic-bezier(.5,0,.5,1) infinite; }
+@keyframes drop { 0% { transform: translateY(-14px); opacity: 0 } 25% { opacity: 1 } 60%, 100% { transform: translateY(6px); opacity: 1 } }
+.a-twinkle { animation: twinkle 1.6s ease-in-out infinite; }
+@keyframes twinkle { 50% { opacity: .15 } }
+.a-split { animation: split 2.4s ease-in-out infinite alternate; }
+@keyframes split { from { transform: translate(-4px, 4px) } to { transform: translate(3px, -3px) } }
+.a-needle { animation: needle 2.8s ease-in-out infinite alternate; }
+@keyframes needle { from { transform: rotate(-55deg) } to { transform: rotate(35deg) } }
+.a-gavel { animation: gavel 1.6s ease-in-out infinite; }
+@keyframes gavel { 0%, 100% { transform: rotate(-18deg) } 40% { transform: rotate(6deg) } 50% { transform: rotate(0) } }
+.a-ripple { animation: ripple 1.8s ease-out infinite; }
+@keyframes ripple { 0% { opacity: 0 } 30% { opacity: 1 } 100% { opacity: 0 } }
+.a-smoke { animation: smoke 2.4s ease-out infinite; }
+@keyframes smoke { from { transform: translateY(0) scale(.6); opacity: .5 } to { transform: translateY(-22px) scale(1.6); opacity: 0 } }
+.a-look { animation: look 3s ease-in-out infinite; }
+@keyframes look { 0%, 100% { transform: translateX(-8px) } 50% { transform: translateX(8px) } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  .spark polyline, .a-draw { stroke-dashoffset: 0; }
+}

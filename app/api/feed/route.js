@@ -26,7 +26,7 @@ export async function GET(req) {
     .map(classify)
     .sort((a, b) => a.tier - b.tier || b.ts - a.ts);
 
-  await addOneLiners(items);
+  await addStories(items);
 
   return Response.json({
     hours,
@@ -38,15 +38,16 @@ export async function GET(req) {
   });
 }
 
-// One cheap batched call summarises every tier-2 filing (and tier-1 deals) that isn't cached yet.
-// Each filing is summarised once, ever; tier-3 routine filings are never sent to a model.
-async function addOneLiners(items) {
-  const want = items.filter((i) => i.tier === 2 || i.kind === 'oneliner');
-  want.forEach((i) => (i.line = peek(`line:${i.id}`)));
-  const todo = want.filter((i) => !i.line).slice(0, 120);
+// Story writer: one cheap batched call turns every Important/Update filing into a Medium-style
+// story (headline + 20-30 word summary + mood for the illustration). Cached per filing for a week,
+// so each filing is written once; routine filings never reach a model.
+async function addStories(items) {
+  const want = items.filter((i) => i.tier <= 2);
+  want.forEach((i) => Object.assign(i, peek(`story:${i.id}`) || {}));
+  const todo = want.filter((i) => !i.story).slice(0, 120);
   if (!todo.length || !hasKey()) return;
   const chunks = [];
-  for (let k = 0; k < todo.length; k += 40) chunks.push(todo.slice(k, k + 40));
+  for (let k = 0; k < todo.length; k += 30) chunks.push(todo.slice(k, k + 30));
   await Promise.all(chunks.map(oneBatch));
 }
 
@@ -56,15 +57,24 @@ async function oneBatch(todo) {
       tier: 'cheap',
       parts: [{
         text:
-          'You triage stock-exchange filings for a busy investor. For each filing write ONE line, max 14 words: ' +
-          'what happened and the number that matters if present. Plain words, no hype, no advice. ' +
-          'Use only the text given. If the text says nothing beyond its title, return a tightened title.\n' +
-          'Return JSON object {"<id>": "<line>"}.\n\n' +
-          JSON.stringify(todo.map((i) => ({ id: i.id, co: i.name, type: i.category, title: i.subject, text: i.headline.slice(0, 600) }))),
+          'You write a 2-minute morning digest of stock-exchange filings for a busy investor, in the style of short Medium posts.\n' +
+          'For each filing return:\n' +
+          '- "h": a headline, max 9 words, plain and specific (name the company, the thing, the number if any). No clickbait.\n' +
+          '- "s": a summary of 20 to 30 words: what happened, the key number or date, and why an investor might care. ' +
+          'Use ONLY facts in the given text; never invent numbers. If the text is thin, say what kind of filing it is and what to check in it.\n' +
+          '- "m": mood for the investor: "good", "bad" or "neutral".\n' +
+          'Return JSON {"<id>": {"h": "...", "s": "...", "m": "..."}}.\n\n' +
+          JSON.stringify(todo.map((i) => ({ id: i.id, co: i.name, type: i.category, title: i.subject, text: i.headline.slice(0, 700) }))),
       }],
     });
-    for (const i of todo) if (out?.[i.id]) { i.line = String(out[i.id]); cached(`line:${i.id}`, 7 * DAY, async () => i.line); }
+    for (const i of todo) {
+      const o = out?.[i.id];
+      if (!o?.s) continue;
+      const story = { story: String(o.s), line: String(o.h || i.title), mood: ['good', 'bad'].includes(o.m) ? o.m : 'neutral' };
+      Object.assign(i, story);
+      cached(`story:${i.id}`, 7 * DAY, async () => story);
+    }
   } catch (e) {
-    console.error('oneliners', e.message);
+    console.error('stories', e.message);
   }
 }
