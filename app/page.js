@@ -168,16 +168,31 @@ function Empty({ title, text }) {
 }
 
 /* ---------------- Price ---------------- */
+// Trading-session date in IST, e.g. "Mon, 2 Nov 2026".
+const sessionDay = (ts) => new Date(ts).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const shortDay = (ts) => new Date(ts).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' });
+
 function PricePane({ moves, prices, cfg, items, isRead, markRead }) {
+  // The session most holdings' latest bar belongs to = the "as of" date for this screen.
+  const days = prices.map((p) => sessionDay(p.date));
+  const asOf = days.sort((a, b) => days.filter((x) => x === b).length - days.filter((x) => x === a).length)[0];
+  const latest = prices.length ? Math.max(...prices.map((p) => p.date)) : null;
+  const stale = latest && Date.now() - latest > 4 * 864e5;
   return (
     <>
+      {asOf && (
+        <div className={`asof ${stale ? 'stale' : ''}`}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
+          <span>Session <b>{asOf}</b> · NSE close · moves vs previous close, volume vs 20-day average{stale ? ' · data looks stale' : ''}</span>
+        </div>
+      )}
       {moves.length === 0 && <Empty title="Calm day." text="Nothing crossed your price or volume limits." />}
       {moves.map((m, k) => (
         <div key={m.id} className={`card rise ${isRead(m) ? 'read' : 'unread'}`} style={{ animationDelay: `${k * 60}ms` }} onClick={() => markRead(m.id)}>
           {!isRead(m) && <span className="dot" />}
           <Link href={`/research/${m.ticker}`} className="move">
             <div>
-              <div className="meta"><span className="t">{m.ticker}</span><span className="mono">₹{m.close.toFixed(1)}</span></div>
+              <div className="meta"><span className="t">{m.ticker}</span><span className="mono">₹{m.close.toFixed(1)}</span><span className="asof-chip">close {shortDay(m.date)}</span></div>
               <div className="row" style={{ marginTop: 6 }}>
                 <span className={`pill ${tone(m.chg)}`}>{m.chg > 0 ? '▲' : '▼'} {pc(m.chg)}</span>
                 {m.hitVol && <span className="pill vol">{m.volX.toFixed(1)}× avg volume</span>}
@@ -190,7 +205,7 @@ function PricePane({ moves, prices, cfg, items, isRead, markRead }) {
       ))}
       {prices.length > 0 && (
         <section className="sec">
-          <div className="sec-h"><span>All holdings today</span><span>{prices.length}</span></div>
+          <div className="sec-h"><span>All holdings · close {asOf ? shortDay(latest) : ''}</span><span>{prices.length}</span></div>
           <div className="grid">
             {prices.map((p) => (
               <Link key={p.ticker} href={`/research/${p.ticker}`} className="tile">
@@ -243,7 +258,7 @@ function Meta({ g }) {
       {g.story && <span className="ai-tag">AI summary</span>}
       {g.mood === 'good' && <span className="mood good">▲ Positive</span>}
       {g.mood === 'bad' && <span className="mood bad">▼ Negative</span>}
-      <span>{ago(g.ts)} ago</span><span>·</span><span>{mins} min read</span>
+      <span title={new Date(g.ts).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}>{new Date(g.ts).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} · {ago(g.ts)} ago</span><span>·</span><span>{mins} min read</span>
       {g.rest?.length > 0 && <><span>·</span><span>+{g.rest.length} related</span></>}
     </div>
   );
