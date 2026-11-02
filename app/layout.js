@@ -1,5 +1,4 @@
 import './globals.css';
-import TabBar from '@/components/TabBar';
 
 export const metadata = {
   title: 'FINN',
@@ -23,7 +22,6 @@ export default function Root({ children }) {
       </head>
       <body>
         <main className="shell">{children}</main>
-        <TabBar />
         <script
           dangerouslySetInnerHTML={{
             __html: "if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}))",

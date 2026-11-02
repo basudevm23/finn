@@ -3,23 +3,38 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { CATEGORY_LABEL } from '@/lib/classify';
 import Art, { EmptyArt } from '@/components/Art';
+import ModeToggle from '@/components/ModeToggle';
 import { ago, pc, tone, Spark, useLocal, useSession, NumTable, Loader } from '@/components/ui';
 
 const WINDOWS = [[24, '24H'], [72, '3D'], [168, '7D'], [720, '30D']];
 const DEFAULTS = { pricePct: 4, volX: 2, cats: ['results', 'M&A', 'management_change', 'fund_raise', 'pledging'] };
-const TABS = [['price', 'Price'], ['important', 'Important'], ['updates', 'Updates'], ['routine', 'Routine']];
+// The brief's two flavours of Push, each with its own tabs.
+const SECTIONS = {
+  digest: { label: 'Digest', tabs: [['important', 'Important'], ['updates', 'Updates'], ['routine', 'Routine']] },
+  alerts: { label: 'Triggered alerts', tabs: [['moves', 'Price & volume'], ['tracked', 'Filings you track']] },
+};
+const SUB = {
+  important: (w) => `Material filings from the last ${w}, most important first.`,
+  updates: (w) => `Worth knowing, not urgent: the rest of the last ${w}.`,
+  routine: (w) => `Paperwork from the last ${w}, kept out of your way.`,
+  moves: (_, c) => `Stocks that crossed your limits: ±${c.pricePct}% price or ${c.volX}× average volume.`,
+  tracked: (_, c, n) => `Material filings of the ${n} types you chose to be alerted on.`,
+};
 const words = (s = '') => s.split(/\s+/).filter(Boolean).length;
 const readMins = (n) => Math.max(1, Math.round(n / 200));
 
-export default function Alerts() {
+export default function Push() {
   const [hours, setHours] = useLocal('finn.hours', 24);
   const [cfg, setCfg] = useLocal('finn.cfg', DEFAULTS);
   const [readIds, setReadIds, ready] = useSession('finn.read', []);
-  const [tab, setTab] = useSession('finn.tab', 'important');
+  const [section, setSection] = useSession('finn.section', 'digest');
+  const [tabs, setTabs] = useSession('finn.tabs', { digest: 'important', alerts: 'moves' });
   const [feed, setFeed] = useState(null);
   const [px, setPx] = useState(null);
   const [sheet, setSheet] = useState(false);
   const [open, setOpen] = useState(null);
+  const tab = tabs[section] || SECTIONS[section].tabs[0][0];
+  const setTab = (t) => setTabs((x) => ({ ...x, [section]: t }));
 
   useEffect(() => {
     setFeed(null);
@@ -43,14 +58,17 @@ export default function Alerts() {
   );
 
   const items = (feed?.items || []).map((i) => ({ ...i, watched: cfg.cats.includes(i.category) }));
+  const important = group(items.filter((i) => i.tier === 1).sort((a, b) => b.watched - a.watched || b.ts - a.ts));
   const lists = {
-    price: moves,
-    important: group(items.filter((i) => i.tier === 1).sort((a, b) => b.watched - a.watched || b.ts - a.ts)),
+    important,
     updates: group(items.filter((i) => i.tier === 2)),
     routine: items.filter((i) => i.tier === 3),
+    moves,
+    tracked: important.filter((g) => g.watched),
   };
   const unreadOf = (k) => (k === 'routine' ? 0 : lists[k].filter((g) => !isRead(g)).length);
-  const unreadTotal = unreadOf('price') + unreadOf('important') + unreadOf('updates');
+  const unreadSec = (sec) => SECTIONS[sec].tabs.reduce((n, [k]) => n + unreadOf(k), 0);
+  const unreadTotal = unreadOf('important') + unreadOf('updates') + unreadOf('moves');
 
   useEffect(() => {
     if (!feed || !ready) return;
@@ -60,37 +78,46 @@ export default function Alerts() {
 
   const allIds = (gs) => gs.flatMap((g) => [g.id, ...(g.rest || []).map((r) => r.id)]);
   const openStory = (g) => { setOpen(g); markRead(...allIds([g])); };
+  const winLabel = WINDOWS.find((w) => w[0] === hours)?.[1] || `${hours}h`;
+  const tabLabel = SECTIONS[section].tabs.find(([k]) => k === tab)?.[1];
+  const list = lists[tab] || [];
+  const unreadHere = unreadOf(tab);
 
   return (
     <>
       <header className="top">
-        <div className="row between">
-          <div>
-            <div className="row"><span className="logo">FINN</span><span className="date">{new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</span></div>
-            <h1 className="page-title">Alerts</h1>
-          </div>
-          <div className="row">
-            {unreadTotal > 0 && tab !== 'routine' && lists[tab].length > 0 && (
-              <button className="icon-btn" onClick={() => markRead(...allIds(lists[tab]))}>Mark read</button>
-            )}
-            <button className="icon-btn" aria-label="Alert settings" onClick={() => setSheet(true)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="18" cy="18" r="2" /></svg>
-            </button>
-          </div>
+        <ModeToggle right={
+          <button className="icon-btn" aria-label="Alert settings" onClick={() => setSheet(true)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="18" cy="18" r="2" /></svg>
+          </button>
+        } />
+        <div className="seg two">
+          {Object.entries(SECTIONS).map(([k, s]) => {
+            const u = feed ? unreadSec(k) : 0;
+            return (
+              <button key={k} className={section === k ? 'on' : ''} onClick={() => setSection(k)}>
+                {s.label}{u > 0 && <span className="cnt new">{u}</span>}
+              </button>
+            );
+          })}
         </div>
-        <div className="chips">
-          {WINDOWS.map(([h, l]) => (
-            <button key={h} className={`chip sm ${h === hours ? 'on' : ''}`} onClick={() => setHours(h)}>{l}</button>
-          ))}
-        </div>
-        <nav className="seg" role="tablist">
-          {TABS.map(([k, l]) => {
+        <p className="eyebrow">Push › {SECTIONS[section].label}</p>
+        <h1 className="page-title">{tabLabel}</h1>
+        <p className="sub">{SUB[tab](winLabel, cfg, cfg.cats.length)}</p>
+        {section === 'digest' && (
+          <div className="chips">
+            {WINDOWS.map(([h, l]) => (
+              <button key={h} className={`chip sm ${h === hours ? 'on' : ''}`} onClick={() => setHours(h)}>{l}</button>
+            ))}
+          </div>
+        )}
+        <nav className="utabs" role="tablist">
+          {SECTIONS[section].tabs.map(([k, l]) => {
             const u = feed ? unreadOf(k) : 0;
             const n = feed ? lists[k].length : null;
             return (
               <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
-                {l}
-                {n != null && <span className={`cnt ${u ? 'new' : ''}`}>{u || n}</span>}
+                {l}{n != null && <span className={`cnt ${u ? 'new' : ''}`}>{u || n}</span>}
               </button>
             );
           })}
@@ -102,13 +129,24 @@ export default function Alerts() {
       {!feed ? (
         <div className="sec"><Loader steps={['Checking filings across your 18 holdings…', 'Writing your digest…']} /></div>
       ) : (
-        <div className="pane" key={tab + hours}>
-          {tab === 'price' && <PricePane moves={moves} prices={px?.prices || []} cfg={cfg} items={items} isRead={isRead} markRead={markRead} />}
-          {(tab === 'important' || tab === 'updates') && (
-            <StoryPane list={lists[tab]} isRead={isRead} onOpen={openStory} hero={tab === 'important'}
-              empty={tab === 'important' ? 'Nothing important in this window.' : 'No updates in this window.'} />
+        <div className="pane" key={section + tab + hours}>
+          {tab !== 'routine' && list.length > 0 && (
+            <div className="legend">
+              <span><i className="sw new" />New</span>
+              <span><i className="sw" />Read</span>
+              {unreadHere > 0 && (
+                <button onClick={() => markRead(...allIds(list))}>Mark all {unreadHere} as read</button>
+              )}
+            </div>
           )}
-          {tab === 'routine' && <RoutinePane list={lists.routine} />}
+          {tab === 'moves' && <PricePane moves={moves} prices={px?.prices || []} cfg={cfg} items={items} isRead={isRead} markRead={markRead} />}
+          {tab === 'important' && <StoryPane list={list} isRead={isRead} onOpen={openStory} hero empty="Nothing material in this window." />}
+          {tab === 'updates' && <StoryPane list={list} isRead={isRead} onOpen={openStory} empty="No updates in this window." />}
+          {tab === 'tracked' && (
+            <StoryPane list={list} isRead={isRead} onOpen={openStory}
+              empty={<>No material filings of your chosen types. <button className="link" onClick={() => setSheet(true)}>Change types</button></>} />
+          )}
+          {tab === 'routine' && <RoutinePane list={list} />}
         </div>
       )}
 
@@ -119,6 +157,7 @@ export default function Alerts() {
 }
 
 function Empty({ title, text }) {
+  // Every tab stays visible even when empty, so you know it was checked.
   return (
     <div className="empty">
       <EmptyArt />
@@ -132,13 +171,9 @@ function Empty({ title, text }) {
 function PricePane({ moves, prices, cfg, items, isRead, markRead }) {
   return (
     <>
-      <p className="digest">
-        {moves.length ? <><b>{moves.length}</b> {moves.length === 1 ? 'stock' : 'stocks'} crossed your limits</> : 'No unusual moves'}
-        <span> · ±{cfg.pricePct}% or {cfg.volX}× volume</span>
-      </p>
       {moves.length === 0 && <Empty title="Calm day." text="Nothing crossed your price or volume limits." />}
       {moves.map((m, k) => (
-        <div key={m.id} className={`card rise ${isRead(m) ? 'read' : ''}`} style={{ animationDelay: `${k * 60}ms` }} onClick={() => markRead(m.id)}>
+        <div key={m.id} className={`card rise ${isRead(m) ? 'read' : 'unread'}`} style={{ animationDelay: `${k * 60}ms` }} onClick={() => markRead(m.id)}>
           {!isRead(m) && <span className="dot" />}
           <Link href={`/research/${m.ticker}`} className="move">
             <div>
@@ -183,7 +218,7 @@ function StoryPane({ list, isRead, onOpen, hero, empty }) {
   const [first, ...rest] = list;
   return (
     <>
-      <p className="digest"><b>{list.length}</b> {list.length === 1 ? 'story' : 'stories'} · {readMins(total)} min read</p>
+      <p className="digest"><b>{list.length}</b> {list.length === 1 ? 'story' : 'stories'} · about {readMins(total)} min to read</p>
       {hero ? <Hero g={first} isRead={isRead(first)} onOpen={() => onOpen(first)} /> : <Story g={first} k={0} isRead={isRead(first)} onOpen={() => onOpen(first)} />}
       {rest.map((g, k) => <Story key={g.id} g={g} k={k + 1} isRead={isRead(g)} onOpen={() => onOpen(g)} />)}
     </>
@@ -215,7 +250,7 @@ function Meta({ g }) {
 
 function Hero({ g, isRead, onOpen }) {
   return (
-    <article className={`hero rise ${isRead ? 'read' : ''}`} onClick={onOpen}>
+    <article className={`hero rise ${isRead ? 'read' : 'unread'}`} onClick={onOpen}>
       <Art category={g.category} mood={g.mood} ticker={g.ticker} size="hero" />
       <div className="hero-body">
         <Byline g={g} />
@@ -229,7 +264,7 @@ function Hero({ g, isRead, onOpen }) {
 
 function Story({ g, k, isRead, onOpen }) {
   return (
-    <article className={`story rise ${isRead ? 'read' : ''}`} style={{ animationDelay: `${Math.min(k, 8) * 60}ms` }} onClick={onOpen}>
+    <article className={`story rise ${isRead ? 'read' : 'unread'}`} style={{ animationDelay: `${Math.min(k, 8) * 60}ms` }} onClick={onOpen}>
       <div className="story-main">
         <Byline g={g} />
         <h3 className="s-title sm">{!isRead && <span className="dot inline" />}{g.line || g.title}</h3>
@@ -322,7 +357,7 @@ function RoutinePane({ list }) {
   if (!list.length) return <Empty title="Nothing routine." text="No paperwork filings in this window." />;
   return (
     <>
-      <p className="digest">Paperwork we kept out of your way: trading windows, certificates, newspaper ads.</p>
+      <p className="digest"><b>{list.length}</b> filings: trading windows, certificates, newspaper ads and similar.</p>
       {list.map((i) => (
         <div key={i.id} className="line-row dim">
           <span className="t">{i.ticker}</span>

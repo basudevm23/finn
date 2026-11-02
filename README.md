@@ -1,9 +1,32 @@
 # FINN: your portfolio, filtered
 
-A mobile-first investment agent for Indian equities. It has two workflows.
+A mobile-first investment agent for Indian equities, built around the brief's two modes. A **Push / Pull** toggle sits at the top of every screen.
 
-- **Push: the morning triage inbox.** Every filing across an 18-stock portfolio for a window you pick (24H / 3D / 7D / 30D) is sorted into three tiers: *Material* (rich card), *Worth a glance* (one line) and *Routine* (collapsed into a count). End-of-day price and volume alerts use thresholds you set. You clear items by swiping, until you reach "Nothing needs you."
-- **Pull: promised vs delivered.** Type any NSE ticker. FINN reads the last 4 earnings-call transcripts, extracts every explicit guidance item, checks each one against reported quarterly numbers, and gives management a credibility score.
+## Push: the app reaches out to you
+- **Digest** (a windowed digest; choose 24H, 3D, 7D or 30D). Every filing across the 18-stock portfolio, prioritised:
+  - **Important**: material filings shown as Medium-style stories, each with a headline, a 20–30-word summary, read time and an animated cover. Tapping one opens a reader. A results story shows Revenue / EBITDA / PBT / PAT with QoQ and YoY; a CEO/CFO change shows a sourced background of the incoming person.
+  - **Updates**: notable but not urgent, written the same way.
+  - **Routine**: paperwork (trading windows, certificates, newspaper ads), kept to one line each.
+- **Triggered alerts**: alerts fire on your own thresholds.
+  - **Price & volume**: end-of-day moves beyond ±X% or volume above N× the 20-day average, both set with sliders. Each move is shown next to any filing from the same window.
+  - **Filings you track**: material announcements of the types you chose (results, M&A, management change…).
+- **Read state**: unread items are a darker pink and read items turn lighter. "Mark all N as read" clears the current tab. Read state lasts for the session.
+
+## Pull: you ask it to dig in
+Search any listed company by name or ticker ("zomato" resolves to ETERNAL). The report has the brief's eight sections as tabs:
+
+| Section | Built from | How |
+|---|---|---|
+| Business snapshot | Latest annual report (falls back to the latest transcript) | Flash-Lite reads the PDF |
+| Financial snapshot | Reported financials + EOD price | Code |
+| Trajectory | 6 years annual + 8 quarters | Code: CAGRs, margin direction, plain-English findings |
+| Balance sheet | Reported balance sheets + ratios | Code: D/E, borrowings trend, CWIP, funding mix, working-capital cycle |
+| Cash quality | Reported cash-flow statements | Code: operating cash ÷ profit by year, reinvestment rate |
+| Narrative vs numbers | Last 4 concall transcripts vs reported quarters | Map: Flash-Lite per transcript. Reduce: Flash judges each promise (delivered / partly / missed / too early) and scores credibility out of 10 |
+| Guidance | Latest call + still-open promises | Extracted with verbatim quotes |
+| Bull vs bear | Only the facts in the tabs above | Same Flash call; each point must cite a number or a management statement |
+
+The pull side is grounded only in company filings: no news, no broker notes, no model memory (enforced in the prompts). Every section names its source.
 
 ## Run
 
@@ -29,7 +52,7 @@ screener.in (numbers,   │        │
 | Step | How | Tokens |
 |---|---|---|
 | Classify ~100s of filings into 17 categories + 3 tiers | Regex rules (`lib/classify.js`) | 0 |
-| One-line summaries for tier-2 filings | One batched Flash-Lite call per feed load, cached per filing for 7 days | ~1–2k |
+| Story headline + 20–30-word summary + mood for Important/Updates | Batched Flash-Lite calls (30 filings each), cached per filing for 7 days | ~2–4k |
 | Results card (Revenue / EBITDA / PBT / PAT, QoQ, YoY) | Flash-Lite reads the results PDF and returns raw line items; **code** computes EBITDA and the % changes | ~20k per filing, once |
 | Incoming-exec bio | Flash-Lite with Google Search grounding, with sources shown | small, once |
 | Unusual moves | Server sends EOD stats; the **client** applies your thresholds | 0 |
@@ -38,16 +61,18 @@ screener.in (numbers,   │        │
 Cost principles:
 - LLMs extract, code calculates.
 - Tier-3 filings never touch a model.
-- Enrichment runs only when a card scrolls into view (`IntersectionObserver`), so you pay only for what the investor actually sees.
+- A story's PDF (results numbers, executive bio) is read only when the investor opens it, so you pay only for what they actually read.
 - In-flight requests are de-duplicated (the cache stores the promise).
 - A live token meter is shown in the settings sheet.
 
 **Grounding rule (pull side):** prompts restrict the model to the transcripts and reported numbers. No news, no broker notes, no model memory. Every verdict cites numbers, every call links its transcript, and quotes are shown verbatim.
 
 ## Files
-- `app/page.js`: **Alerts** tab (push): price alerts, Important, FYI, Routine; read/unread kept for the session
-- `app/research/page.js`: **Research** tab (pull): search by company name or ticker, recent research this session
-- `app/research/[ticker]/page.js`: research report
+- `app/page.js`: Push (Digest: Important / Updates / Routine; Triggered alerts: Price & volume / Filings you track; story reader)
+- `app/research/page.js`: Pull search (name or ticker), recent research this session
+- `app/research/[ticker]/page.js`: the eight-section research report
+- `lib/analysis.js`: deterministic Financial snapshot, Trajectory, Balance sheet, Cash quality
+- `components/Art.js`: animated cover illustrations per filing type
 - `app/api/resolve`: name → ticker (screener search first; AI fallback for brands/old names like "Zomato" → ETERNAL, verified against screener)
 - `app/api/*`: feed, prices, enrich, research, usage
 - `lib/`: data sources, classifier, Gemini client, cache, portfolio

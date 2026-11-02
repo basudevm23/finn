@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PORTFOLIO, ADHOC } from '@/lib/portfolio';
 import { useSession } from '@/components/ui';
+import ModeToggle from '@/components/ModeToggle';
 
 export default function ResearchHome() {
   const router = useRouter();
@@ -38,9 +39,10 @@ export default function ResearchHome() {
   return (
     <>
       <header className="top">
-        <div className="row"><span className="logo">FINN</span></div>
-        <h1 className="page-title">Research</h1>
-        <p className="sub">Any listed company: what management promised vs what they delivered.</p>
+        <ModeToggle />
+        <p className="eyebrow">Pull › Research</p>
+        <h1 className="page-title">Dig into a company</h1>
+        <p className="sub">Eight views grounded only in annual reports, concall transcripts and reported financials.</p>
         <form className="search" onSubmit={submit}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Company name or ticker, e.g. zomato" autoCorrect="off" spellCheck={false} enterKeyHint="search" />
