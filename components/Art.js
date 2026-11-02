@@ -1,7 +1,7 @@
 // Animated cover illustrations, one per filing type (pure SVG + CSS, no image requests).
 // mood tints the scene: good = green, bad = red, neutral = brand pink.
-const INK = { good: '#11804f', bad: '#c8333f', neutral: '#d6457a' };
-const BG = { good: ['#eaf7f0', '#d3efe0'], bad: ['#fdeef0', '#f9d9dd'], neutral: ['#fff1f6', '#fbdbe7'] };
+const INK = { good: '#5BD16B', bad: '#F6465D', neutral: '#00BFA6' };
+const BG = { good: ['#0F1F18', '#14301F'], bad: ['#211216', '#33161C'], neutral: ['#0E1A24', '#112A33'] };
 
 export const ART_FOR = {
   results: 'bars', results_deck: 'bars', earnings_call: 'wave', investor_meetings: 'wave',
@@ -22,8 +22,8 @@ export default function Art({ category, mood = 'neutral', ticker = '', size = 't
           <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={a} /><stop offset="1" stopColor={b} /></linearGradient>
         </defs>
         <rect width="160" height="120" fill={`url(#${gid})`} />
-        <circle className="a-float" cx="138" cy="18" r="26" fill="#fff" opacity=".45" />
-        <circle className="a-float2" cx="16" cy="108" r="20" fill="#fff" opacity=".35" />
+        <circle className="a-float" cx="138" cy="18" r="26" fill="#fff" opacity=".05" />
+        <circle className="a-float2" cx="16" cy="108" r="20" fill="#fff" opacity=".04" />
         {SCENES[kind](c)}
         {size === 'hero' && ticker && (
           <text x="12" y="20" fontFamily="JetBrains Mono, monospace" fontSize="9" fontWeight="600" fill={c} opacity=".8" letterSpacing="1">{ticker}</text>
@@ -116,7 +116,7 @@ const SCENES = {
       <path d="M34 92V58l20 12V58l20 12V58l20 12V40h12v52z" fill={c} opacity=".75" />
       <circle className="a-smoke" cx="100" cy="32" r="6" fill={c} opacity=".3" />
       <circle className="a-smoke" style={{ animationDelay: '.8s' }} cx="100" cy="32" r="5" fill={c} opacity=".3" />
-      {[0, 1, 2].map((i) => <rect key={i} x={40 + i * 20} y="78" width="8" height="8" rx="1" fill="#fff" opacity=".7" />)}
+      {[0, 1, 2].map((i) => <rect key={i} x={40 + i * 20} y="78" width="8" height="8" rx="1" fill="#F0B90B" opacity=".8" />)}
     </g>
   ),
   lock: (c) => (
@@ -135,13 +135,13 @@ const SCENES = {
   ballot: (c) => (
     <g>
       <rect x="50" y="62" width="60" height="32" rx="4" fill={c} opacity=".75" />
-      <rect x="66" y="60" width="28" height="4" rx="2" fill="#fff" />
-      <g className="a-drop"><rect x="68" y="30" width="24" height="28" rx="2" fill="#fff" stroke={c} strokeWidth="2" /><path d="M74 44l4 4 8-8" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" /></g>
+      <rect x="66" y="60" width="28" height="4" rx="2" fill="#121417" />
+      <g className="a-drop"><rect x="68" y="30" width="24" height="28" rx="2" fill="#1A1D26" stroke={c} strokeWidth="2" /><path d="M74 44l4 4 8-8" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" /></g>
     </g>
   ),
   doc: (c) => (
     <g className="a-float">
-      <path d="M58 28h32l14 14v50H58z" fill="#fff" stroke={c} strokeWidth="2.5" />
+      <path d="M58 28h32l14 14v50H58z" fill="#1A1D26" stroke={c} strokeWidth="2.5" />
       <path d="M90 28v14h14" fill="none" stroke={c} strokeWidth="2.5" />
       {[0, 1, 2, 3].map((i) => <rect key={i} className="a-grow-x" style={{ animationDelay: `${i * 0.15}s` }} x="66" y={52 + i * 9} width={i === 3 ? 18 : 30} height="3.5" rx="1.75" fill={c} opacity=".55" />)}
     </g>
@@ -152,10 +152,10 @@ const SCENES = {
 export function EmptyArt() {
   return (
     <svg width="120" height="90" viewBox="0 0 160 120" aria-hidden>
-      <circle className="a-float" cx="80" cy="60" r="42" fill="#fde8ef" />
-      <path d="M58 64l14 14 30-32" fill="none" stroke="#d6457a" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" className="a-draw" />
-      <circle className="a-twinkle" cx="122" cy="30" r="3" fill="#d6457a" />
-      <circle className="a-twinkle" style={{ animationDelay: '.7s' }} cx="36" cy="38" r="2.5" fill="#d6457a" />
+      <circle className="a-float" cx="80" cy="60" r="42" fill="var(--auto-bg)" />
+      <path d="M58 64l14 14 30-32" fill="none" stroke="var(--auto)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" className="a-draw" />
+      <circle className="a-twinkle" cx="122" cy="30" r="3" fill="var(--auto)" />
+      <circle className="a-twinkle" style={{ animationDelay: '.7s' }} cx="36" cy="38" r="2.5" fill="var(--auto)" />
     </svg>
   );
 }

@@ -1,2 +1,2 @@
-{ "name": "FINN", "short_name": "FINN", "start_url": "/", "display": "standalone", "background_color": "#ffffff", "theme_color": "#ffffff",
+{ "name": "FINN", "short_name": "FINN", "start_url": "/", "display": "standalone", "background_color": "#121417", "theme_color": "#121417",
   "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }] }

@@ -142,7 +142,7 @@ function Bars({ data, fmt = (v) => cr(v), sub, accent }) {
     </div>
   );
 }
-const Src = ({ children }) => <p className="srcline">{children}</p>;
+const Src = ({ children }) => <p className="srcline">⚙ {children}</p>;
 
 /* ---------- 1. Business snapshot ---------- */
 function Business({ d }) {

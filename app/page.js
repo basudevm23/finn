@@ -240,6 +240,7 @@ function Meta({ g }) {
   const mins = readMins(words(g.story) + words(g.line));
   return (
     <div className="smeta">
+      {g.story && <span className="ai-tag">AI summary</span>}
       {g.mood === 'good' && <span className="mood good">▲ Positive</span>}
       {g.mood === 'bad' && <span className="mood bad">▼ Negative</span>}
       <span>{ago(g.ts)} ago</span><span>·</span><span>{mins} min read</span>
