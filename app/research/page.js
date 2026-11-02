@@ -50,8 +50,8 @@ export default function ResearchHome() {
         </form>
         {hits.length > 0 && (
           <div className="results">
-            {hits.map((h) => (
-              <Link key={h.sym} href={`/research/${h.sym}`}>{h.name}<span>{h.sym}</span></Link>
+            {hits.map((h, i) => (
+              <Link key={`${h.sym}${i}`} href={`/research/${h.sym}`}>{h.name}<span>{h.sym}</span></Link>
             ))}
           </div>
         )}
@@ -63,8 +63,8 @@ export default function ResearchHome() {
         <section className="sec">
           <div className="sec-h"><span>Recently researched</span><span>this session</span></div>
           <div className="list">
-            {recent.map((r) => (
-              <Link key={r.sym} href={`/research/${r.sym}`}><b>{r.sym}</b><span>{r.name}</span><i>›</i></Link>
+            {recent.map((r, i) => (
+              <Link key={`${r.sym}${i}`} href={`/research/${r.sym}`}><b>{r.sym}</b><span>{r.name}</span><i>›</i></Link>
             ))}
           </div>
         </section>

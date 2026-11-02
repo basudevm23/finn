@@ -303,8 +303,8 @@ function Narrative({ d, n }) {
       )}
       {d.watch && <div className="watch"><b>WATCH NEXT QUARTER</b>{d.watch}</div>}
       <div className="sec"><div className="sec-h"><span>Call by call</span><span>tap for quotes</span></div>
-        {(d.calls || []).map((c) => (
-          <details key={c.url} className="pvd">
+        {(d.calls || []).map((c, i) => (
+          <details key={`call${i}`} className="pvd">
             <summary>
               <div className="m"><span style={{ color: 'var(--text)' }}>{c.quarter || c.date}</span><span>{c.tone}</span><span className="tr">{c.date}</span></div>
               {c.pressed_on?.length > 0 && <p className="e">Analysts pressed on: {c.pressed_on.join('; ')}</p>}
@@ -372,8 +372,8 @@ function Sources({ num, biz }) {
     <div className="sec">
       <div className="sec-h"><span>Primary sources</span></div>
       <div className="src" style={{ fontSize: 11.5 }}>
-        {num.concalls.map((c) => <a key={c.url} href={c.url} target="_blank" rel="noreferrer">Concall {c.date}</a>)}
-        {num.reports.map((r) => <a key={r.url} href={r.url} target="_blank" rel="noreferrer">{r.title}</a>)}
+        {num.concalls.map((c, i) => <a key={`c${i}`} href={c.url} target="_blank" rel="noreferrer">Concall {c.date}</a>)}
+        {num.reports.map((r, i) => <a key={`r${i}`} href={r.url} target="_blank" rel="noreferrer">{r.title}</a>)}
         <a href={num.url} target="_blank" rel="noreferrer">Reported financials</a>
       </div>
       <p className="foot">Pull-side analysis uses only company filings: annual reports, concall transcripts and reported financials. No news, broker notes or model memory.</p>

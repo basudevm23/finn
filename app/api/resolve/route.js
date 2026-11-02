@@ -46,6 +46,6 @@ async function search(q) {
     const rows = await r.json();
     return rows
       .map((x) => ({ name: x.name, sym: (x.url || '').match(/\/company\/([^/]+)\//)?.[1] }))
-      .filter((x) => x.sym && x.name);
+      .filter((x, i, all) => x.sym && x.name && all.findIndex((y) => y.sym === x.sym) === i);
   }).catch(() => []);
 }
