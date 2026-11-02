@@ -34,4 +34,4 @@ Please find my submission for the FINN build challenge.
 **Next steps:** web-push notifications for triggered alerts, a persistent KV cache, and a per-stock "why did it move" view that joins filings, price, and transcript commentary. I'd also evaluate the classifier against a labelled set of filings, and add segment-level trajectory from annual-report notes.
 
 Thanks,
-Mansi Ghodke
+Basudev Mohapatra
